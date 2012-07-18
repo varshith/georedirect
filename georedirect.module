@@ -1,0 +1,94 @@
+<?php
+/**
+* @file
+* Redirect based on HTML5 Geolocation
+*/
+
+/**
+* Implements hook_help.
+*
+* Displays help and module information.
+*
+* @param path
+*   Which path of the site we're using to display help
+* @param arg
+*   Array that holds the current path as returned from arg() function
+*/
+function georedirect_help($path, $arg) {
+  switch ($path) {
+    case "admin/help#georedirect":
+      return '<p>'.  t("Redirect based on HTML5 Geolocation") .'</p>';
+      break;
+  }
+} 
+
+/**
+* Implements hook_menu().
+*/
+function georedirect_menu() {
+  $items = array();
+
+  $items['admin/config/content/georedirect'] = array(
+    'title' => 'GeoRedirect',
+    'description' => 'Redirection based on HTML5 geolocation module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('georedirect_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+* Implements hook_preprocess_page.
+*/
+function georedirect_preprocess_page(&$variables) {
+  if(!empty($variables['node'])){
+    $node = $variables['node'];
+	$nodes = variable_get('georedirect_nodes', 1);
+	$nodes_list = explode(",", $nodes);
+	foreach($nodes_list as $node_path){
+	$node_id = explode("/",drupal_get_normal_path(trim($node_path)));
+	if($node_id[0]=='node' && is_numeric($node_id[1]))
+	print 'hi'.isset($_COOKIE['georedirect']);
+      if($node->nid == $node_id[1] && !isset($_COOKIE['georedirect'])){
+	    $time = variable_get('georedirect_time', 60);
+		if(empty($time) || !is_numeric($time))
+		  setcookie('georedirect', '1', '', '/');
+		else
+		  setcookie('georedirect', '1', time()+($time*60), '/');	    
+	    drupal_add_js('misc/jquery.js');
+	    drupal_add_js('http://maps.google.com/maps/api/js?sensor=true');
+	    drupal_add_js(drupal_get_path('module', 'georedirect') . '/js/FindLocation.js');
+		break;
+      }
+	}
+  }
+}
+
+/**
+* Page callback: GeoRedirect settings
+*
+* @see georedirect_menu()
+*/
+function georedirect_form($form, &$form_state) {
+  $form['georedirect']['georedirect_nodes'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Pages to redirect'),
+    '#default_value' => variable_get('georedirect_nodes', 1),
+    '#description' => t('List of comma seperated pages for which the redirect needs to happen. Eg. node/about,node/99'),
+    '#required' => TRUE,
+  );
+   $form['georedirect']['georedirect_time'] = array(
+  '#type' => 'textfield',
+  '#title' => t('Time interval between consecutive redirects(in minutes)'),
+  '#default_value' => variable_get('georedirect_time', 60),
+  '#description' => t('Leaving this empty will reset redirection till the session ends(browser closes)'),
+  '#size' => '4',
+  '#maxlength' => '8',
+  );
+  setcookie('georedirect', '0', '','/');
+  print $_COOKIE['georedirect'];
+  return system_settings_form($form);
+}
