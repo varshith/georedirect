@@ -1,7 +1,11 @@
 (function ($) {
-$(document).ready(function(){
+Drupal.behaviors.georedirect = {
+  attach: function() {
 getLocation();
-  });
+}
+  };
+}(jQuery));
+  
 function getLocation()
   {
   if (navigator.geolocation)
@@ -51,5 +55,5 @@ window.location = url;
  	
   }
 
-})(jQuery);
+//})(jQuery);
 
